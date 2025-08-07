@@ -1,3 +1,14 @@
+// index.js
+// === Enhanced WhatsApp Support Bot (Corporate Standard with Stop/Restart Feature) ===
+
+const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
+const qrcode = require("qrcode-terminal");
+const fs = require("fs");
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
+const moment = require("moment");
+const express = require("express");
+
 // Add these modifications to your existing index.js file
 
 // At the top, after your imports, add:
@@ -25,6 +36,9 @@ const client = new Client({
     }),
   },
 });
+
+const app = express();
+app.use(express.json());
 
 // Add a health check endpoint (add this after your existing webhook endpoints):
 app.get("/health", (req, res) => {
@@ -61,21 +75,6 @@ if (process.env.NODE_ENV === "production") {
     // Don't exit in production, try to continue
   });
 }
-
-// index.js
-// === Enhanced WhatsApp Support Bot (Corporate Standard with Stop/Restart Feature) ===
-
-const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
-const qrcode = require("qrcode-terminal");
-const fs = require("fs");
-const fetch = (...args) =>
-  import("node-fetch").then(({ default: fetch }) => fetch(...args));
-const moment = require("moment");
-const express = require("express");
-
-const client = new Client({ authStrategy: new LocalAuth() });
-const app = express();
-app.use(express.json());
 
 const SESSION_FILE = "ticket-counter.json";
 const RESERVED_TICKETS_FILE = "reserved-tickets.json";
