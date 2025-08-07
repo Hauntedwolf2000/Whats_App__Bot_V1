@@ -1,3 +1,67 @@
+// Add these modifications to your existing index.js file
+
+// At the top, after your imports, add:
+const isDevelopment = process.env.NODE_ENV !== "production";
+
+// Modify the Client initialization (around line 15):
+const client = new Client({
+  authStrategy: new LocalAuth({
+    dataPath: ".wwebjs_auth",
+  }),
+  puppeteer: {
+    headless: true,
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-accelerated-2d-canvas",
+      "--no-first-run",
+      "--no-zygote",
+      "--single-process", // This helps with memory issues
+      "--disable-gpu",
+    ],
+    ...(process.env.NODE_ENV === "production" && {
+      executablePath: "/usr/bin/google-chrome-stable",
+    }),
+  },
+});
+
+// Add a health check endpoint (add this after your existing webhook endpoints):
+app.get("/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+  });
+});
+
+// Add keep-alive functionality for free tier (add this after client.on('ready')):
+if (process.env.NODE_ENV === "production") {
+  const RENDER_URL =
+    process.env.RENDER_EXTERNAL_URL ||
+    `https://${process.env.RENDER_SERVICE_NAME}.onrender.com`;
+
+  // Ping self every 14 minutes to prevent sleeping on free tier
+  setInterval(() => {
+    fetch(`${RENDER_URL}/health`)
+      .then((res) => console.log(`Keep-alive ping successful: ${res.status}`))
+      .catch((err) => console.log("Keep-alive ping failed:", err.message));
+  }, 14 * 60 * 1000); // 14 minutes
+}
+
+// Add better error handling for production
+if (process.env.NODE_ENV === "production") {
+  process.on("unhandledRejection", (reason, promise) => {
+    console.error("Unhandled Rejection at:", promise, "reason:", reason);
+  });
+
+  process.on("uncaughtException", (error) => {
+    console.error("Uncaught Exception:", error);
+    // Don't exit in production, try to continue
+  });
+}
+
 // index.js
 // === Enhanced WhatsApp Support Bot (Corporate Standard with Stop/Restart Feature) ===
 
